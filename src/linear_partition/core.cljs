@@ -20,6 +20,7 @@
         (recur (.iterateNext result) (conj found res))
         found))))
 
+
 (defn nodelist-to-seq
   "Converts nodelist to (not lazy) seq."
   [nl]
@@ -28,24 +29,36 @@
 
 
 (def s3-bucket-url "http://caravaggio-src.s3.amazonaws.com")
+(def s3-obj-uri-prefix "https://s3.amazonaws.com/caravaggio-src")
 (def s3-obj-xpath "//*[name() = 'Contents']")
 
-(defn print-key-name [node]
+
+(defn get-seq-from-node [node tag]
   (-> node
-      (.getElementsByTagName "Key")
+      (.getElementsByTagName tag)
       nodelist-to-seq
       first
       .-textContent))
 
+
+(defn url-for-s3obj
+  "Create a url for the s3 object.
+   Url needs to look like this:
+   https://s3.amazonaws.com/caravaggio-src/images/Amor_Victorious_WGA.jpg"
+  [node]
+  (let [size (js/parseInt (get-seq-from-node node "Size"))
+        name (get-seq-from-node node "Key")]
+    (if-not (zero? size)
+      (str s3-obj-uri-prefix "/" name))))
+
+
 (defn handle-s3-result [evt]
   (let [response (.getResponseXml (.-target evt))
-        results (evaluateXPath response s3-obj-xpath)]
-    (set! (.-s3r js/window) response)
-    (set! (.-resp js/window)  (println (map #(print-key-name %) results)))
+        results (evaluateXPath response s3-obj-xpath)
+        img-urls (map #(url-for-s3obj %) results)]
+    ( map #(.log js/console  %) img-urls)
+    (.log js/console response results (count results))))
 
-    (.log js/console response results (count results))
-
-    ))
 
 (defn get-images []
   (let [xhr (gnet/xhr-connection.)]
