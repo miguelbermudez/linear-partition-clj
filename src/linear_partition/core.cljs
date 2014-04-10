@@ -1,6 +1,9 @@
 (ns linear-partition.core
   (:require [clojure.browser.net :as gnet]
-            [clojure.browser.event :as gevent]))
+            [clojure.browser.event :as gevent]
+            [linear-partition.photos :as photo]
+            [linear-partition.render :as render]
+            ))
 
 (enable-console-print!)
 
@@ -49,15 +52,17 @@
   (let [size (js/parseInt (get-seq-from-node node "Size"))
         name (get-seq-from-node node "Key")]
     (if-not (zero? size)
-      (str s3-obj-uri-prefix "/" name))))
+      (do
+        ;(.log js/console (str s3-obj-uri-prefix "/" name))
+        (str s3-obj-uri-prefix "/" name)))))
 
 
 (defn handle-s3-result [evt]
   (let [response (.getResponseXml (.-target evt))
         results (evaluateXPath response s3-obj-xpath)
-        img-urls (map #(url-for-s3obj %) results)]
-    ( map #(.log js/console  %) img-urls)
-    (.log js/console response results (count results))))
+        img-urls (map #(url-for-s3obj %) results)
+        photo-coll (filter identity (map #(photo/make-photo %) img-urls))]
+    (render/preload-imgs photo-coll)))
 
 
 (defn get-images []
