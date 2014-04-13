@@ -11,3 +11,12 @@
   (dorun (map #(.init %) (take 5 coll))))
 
 
+;; This would also work to run through the lazyseq
+;(defn preload-imgs [coll]
+  ;(doseq [x (take 5 coll)]
+    ;(.init x)
+    ;(log (summed-width (take 5 coll)))
+    ;)
+  ;)
+
+
