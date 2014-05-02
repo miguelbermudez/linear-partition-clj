@@ -35,6 +35,8 @@
 (def s3-obj-uri-prefix "https://s3.amazonaws.com/caravaggio-src")
 (def s3-obj-xpath "//*[name() = 'Contents']")
 
+(def images-loaded (atom 0))
+
 
 (defn get-seq-from-node [node tag]
   (-> node
@@ -57,13 +59,20 @@
         (str s3-obj-uri-prefix "/" name)))))
 
 
+(defn loadAllImages [coll cb]
+  (add-watch images-loaded :preload
+             (fn [_key _ref ov nv]
+              (if (= 3 nv)
+                (cb))))
+  (render/preload-imgs images-loaded))
+
 (defn handle-s3-result [evt]
   (let [response (.getResponseXml (.-target evt))
         results (evaluateXPath response s3-obj-xpath)
         img-urls (map #(url-for-s3obj %) results)
         photo-coll (filter identity (map #(photo/make-photo %) img-urls))]
-    (render/preload-imgs photo-coll)))
-
+    (render/set-photos photo-coll)
+    (loadAllImages photo-coll render/render)))
 
 (defn get-images []
   (let [xhr (gnet/xhr-connection.)]

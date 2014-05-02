@@ -6,7 +6,7 @@
 
 (defrecord Photo [^:mutable img url]
   Object
-  (init [this] 
+  (init [this atm] 
     "Preload Photo with url"
     ;; set img src
     (set! (.-src img) url)
@@ -15,9 +15,9 @@
       img events/EventType.LOAD
       (fn [evt]
         ;(.dir js/console evt)
-        (log (str "[LOAD] " (.-src (.-target evt))))
+        ;(log (str "[LOAD] " (.-src (.-target evt))))
         ;(log (.aspect this))
-        
+        (swap! atm inc)
         ))
     ;; return img
     img)
